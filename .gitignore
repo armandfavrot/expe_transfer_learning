@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+data/
+results/
+results_smoke/
+figures/
