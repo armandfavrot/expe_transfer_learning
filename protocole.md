@@ -168,6 +168,12 @@ Cette procédure produira deux jeux de données simulées, un pour chaque modèl
 
 Pour chacun des deux jeux de données, représenter la distribution de la réponse $Y$ en fonction de $X_1$. Cette visualisation permettra de comparer les distributions obtenues dans les domaines source et cible.
 
+# Environnement de mise en œuvre
+
+Le protocole sera implémenté en **Python**. La bibliothèque **PyTorch** sera utilisée pour définir les embeddings et les MLP, entraîner les modèles, appliquer l'arrêt anticipé et produire les prédictions. Les bibliothèques NumPy et pandas pourront être utilisées pour la manipulation des données, tandis que Matplotlib et Seaborn serviront à réaliser les visualisations.
+
+Afin de garantir la reproductibilité, les versions de Python et des bibliothèques seront enregistrées. Les graines aléatoires de Python, NumPy et PyTorch seront fixées et sauvegardées pour les découpages initiaux ainsi que pour chacune des dix répétitions. Si l'expérience est exécutée sur GPU, les options déterministes de PyTorch seront activées dans la mesure du possible.
+
 # Expérience de transfert d'apprentissage par fine-tuning
 
 L'expérience est conduite séparément sur chacun des deux jeux de données simulées. Conformément aux conventions précédentes, $a_1$ désigne le domaine source et $b_1$ le domaine cible.
