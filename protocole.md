@@ -152,13 +152,17 @@ Ces valeurs induisent des différences entre les domaines qui dépendent de la m
 Pour chacun des deux modèles, la simulation suivra les étapes suivantes :
 
 1. Construire un tableau de $n=2\,000$ observations contenant $X_1$ et $X_2$. Les observations seront réparties de manière aussi équilibrée que possible entre les six combinaisons de modalités de $(X_1,X_2)$, soit 333 ou 334 observations par combinaison.
-2. Ajouter les variables continues $X_3$ et $X_4$, générées indépendamment selon des lois normales centrées réduites :
+2. Ajouter les variables continues $X_3$ et $X_4$. Afin d'introduire un décalage modéré des covariables entre les domaines source et cible, leurs lois conditionnelles à $X_1$ sont définies par :
 
    $$
-   X_3 \sim \mathcal{N}(0,1), \qquad
-   X_4 \sim \mathcal{N}(0,1).
+   \begin{aligned}
+   X_3 \mid X_1=a_1 &\sim \mathcal{N}(0,1), &
+   X_3 \mid X_1=b_1 &\sim \mathcal{N}(0{,}5,1{,}2^2),\\
+   X_4 \mid X_1=a_1 &\sim \mathcal{N}(0,1), &
+   X_4 \mid X_1=b_1 &\sim \mathcal{N}(-0{,}5,1{,}2^2).
+   \end{aligned}
    $$
-   La variable $X_4$ est conservée dans les deux jeux de données, bien qu’elle n’intervienne que dans le modèle 2. Les variables $X_3$ et $X_4$ sont également supposées indépendantes de $X_1$, de $X_2$ et du terme d’erreur $\varepsilon$.
+   Conditionnellement à $X_1$, les variables $X_3$ et $X_4$ sont générées indépendamment l'une de l'autre et indépendamment de $X_2$ et du terme d'erreur $\varepsilon$. Le déplacement des moyennes et la légère augmentation de la dispersion dans le domaine cible créent un *covariate shift* tout en maintenant un recouvrement important entre les deux domaines. La variable $X_4$ est conservée dans les deux jeux de données, bien qu’elle n’intervienne que dans le modèle 2.
 
 3. Calculer la réponse $Y$ à partir de l’équation du modèle considéré, en utilisant les paramètres proposés dans la section précédente, puis ajouter le terme d’erreur $\varepsilon$.
 

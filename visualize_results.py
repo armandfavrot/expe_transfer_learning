@@ -27,6 +27,24 @@ def plot_simulated(data_dir: Path, output_dir: Path) -> None:
     grid.savefig(output_dir / "distribution_y_par_domaine.pdf", bbox_inches="tight")
     plt.close(grid.figure)
 
+    continuous = data.melt(
+        id_vars=["X1", "Modele generateur"], value_vars=["X3", "X4"],
+        var_name="Variable", value_name="Valeur",
+    )
+    grid = sns.displot(
+        data=continuous, x="Valeur", hue="X1", hue_order=["a1", "b1"],
+        row="Variable", col="Modele generateur",
+        kind="kde", fill=True, common_norm=False, height=3.2, aspect=1.3,
+        facet_kws={"sharex": False, "sharey": False},
+    )
+    grid.set_titles(row_template="{row_name}", col_template="{col_name}")
+    grid.set_axis_labels("Valeur", "Densite")
+    grid.figure.suptitle("Distributions de X3 et X4 selon le domaine", y=1.02)
+    grid.figure.set_facecolor("white")
+    grid.savefig(output_dir / "distributions_x3_x4_par_domaine.pdf", bbox_inches="tight", facecolor="white")
+    grid.savefig(output_dir / "distributions_x3_x4_par_domaine.svg", bbox_inches="tight", facecolor="white")
+    plt.close(grid.figure)
+
 
 def plot_rmse(results_path: Path, output_dir: Path) -> None:
     results = pd.read_csv(results_path)

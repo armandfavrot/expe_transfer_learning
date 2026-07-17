@@ -13,6 +13,8 @@ import pandas as pd
 
 X1_LEVELS = ("a1", "b1")
 X2_LEVELS = ("a2", "b2", "c2")
+X3_DISTRIBUTIONS = {"a1": (0.0, 1.0), "b1": (0.5, 1.2)}
+X4_DISTRIBUTIONS = {"a1": (0.0, 1.0), "b1": (-0.5, 1.2)}
 
 
 def set_seed(seed: int) -> np.random.Generator:
@@ -31,8 +33,12 @@ def balanced_design(rng: np.random.Generator) -> pd.DataFrame:
     ]
     rng.shuffle(rows)
     data = pd.DataFrame(rows, columns=["X1", "X2"])
-    data["X3"] = rng.normal(size=len(data))
-    data["X4"] = rng.normal(size=len(data))
+    x3_mean = data["X1"].map({x1: params[0] for x1, params in X3_DISTRIBUTIONS.items()})
+    x3_std = data["X1"].map({x1: params[1] for x1, params in X3_DISTRIBUTIONS.items()})
+    x4_mean = data["X1"].map({x1: params[0] for x1, params in X4_DISTRIBUTIONS.items()})
+    x4_std = data["X1"].map({x1: params[1] for x1, params in X4_DISTRIBUTIONS.items()})
+    data["X3"] = rng.normal(loc=x3_mean, scale=x3_std)
+    data["X4"] = rng.normal(loc=x4_mean, scale=x4_std)
     return data
 
 
@@ -83,7 +89,13 @@ def main() -> None:
         data.to_csv(path, index=False)
         generated[model] = str(path)
 
-    metadata = {"seed": args.seed, "n_per_model": 2000, "files": generated}
+    metadata = {
+        "seed": args.seed,
+        "n_per_model": 2000,
+        "x3_distributions": X3_DISTRIBUTIONS,
+        "x4_distributions": X4_DISTRIBUTIONS,
+        "files": generated,
+    }
     (args.output_dir / "simulation_metadata.json").write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
