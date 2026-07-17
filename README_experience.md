@@ -34,7 +34,7 @@ python run_experiment.py --device cuda --repetitions 1 --max-epochs 2 --patience
 
 Le calcul complet produit :
 
-- `results/rmse_results.csv` : RMSE et informations d'arret anticipe ;
+- `results/rmse_results.csv` : RMSE des reseaux, RMSE oracle du modele generateur et informations d'arret anticipe ;
 - `results/splits.json` : tous les indices des decoupages et les statistiques de standardisation ;
 - `results/run_metadata.json` : versions, GPU, graines et arguments d'execution.
 

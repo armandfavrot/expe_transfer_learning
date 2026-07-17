@@ -140,6 +140,36 @@ def rmse(model: nn.Module, dataset: TensorDataset, device: torch.device) -> floa
         return torch.sqrt(torch.mean((model(x1, x2, cont) - y) ** 2)).item()
 
 
+def generator_prediction(data: pd.DataFrame, dataset: str) -> np.ndarray:
+    """Retourne E[Y | X], c'est-a-dire la prediction du modele generateur."""
+    x1 = data["X1"]
+    x2 = data["X2"]
+    x3 = data["X3"].to_numpy()
+    x4 = data["X4"].to_numpy()
+    pairs = list(zip(x1, x2, strict=True))
+
+    if dataset == "model_1":
+        mu1 = x1.map({"a1": 0.0, "b1": 1.0}).to_numpy()
+        mu2 = x2.map({"a2": 0.0, "b2": -0.75, "c2": 0.75}).to_numpy()
+        gamma1 = x1.map({"a1": 0.0, "b1": -0.5}).to_numpy()
+        return 2.0 + mu1 + mu2 + (1.5 + gamma1) * x3
+    if dataset == "model_2":
+        mu1 = x1.map({"a1": 0.0, "b1": 0.75}).to_numpy()
+        mu12 = {
+            ("a1", "a2"): 0.0, ("a1", "b2"): -1.0, ("a1", "c2"): 1.0,
+            ("b1", "a2"): 0.0, ("b1", "b2"): -0.5, ("b1", "c2"): 1.5,
+        }
+        gamma12 = {
+            ("a1", "a2"): 0.0, ("a1", "b2"): 0.4, ("a1", "c2"): -0.4,
+            ("b1", "a2"): -0.3, ("b1", "b2"): 0.7, ("b1", "c2"): -0.8,
+        }
+        gamma2 = x2.map({"a2": 0.0, "b2": 0.4, "c2": -0.3}).to_numpy()
+        return (2.0 + mu1 + np.array([mu12[p] for p in pairs])
+                + (1.2 + np.array([gamma12[p] for p in pairs])) * x3
+                + (0.8 + gamma2) * x3 * x4)
+    raise ValueError(f"Modele generateur inconnu : {dataset}")
+
+
 def resolve_device(requested: str) -> torch.device:
     if requested == "auto":
         requested = "cuda" if torch.cuda.is_available() else "cpu"
@@ -163,6 +193,9 @@ def run_dataset(path: Path, args: argparse.Namespace, device: torch.device) -> t
     splits = {"source_train": source_train.tolist(), "source_validation": source_val.tolist(),
               "target_pool": target_pool.tolist(), "target_test": target_test.tolist(), "repetitions": {}}
     test_ds = tensors(data, target_test, mean, std)
+    test_data = data.iloc[target_test]
+    oracle_predictions = generator_prediction(test_data, path.stem)
+    oracle_rmse = float(np.sqrt(np.mean((test_data["Y"].to_numpy() - oracle_predictions) ** 2)))
     results = []
 
     for repetition in range(1, args.repetitions + 1):
@@ -199,10 +232,12 @@ def run_dataset(path: Path, args: argparse.Namespace, device: torch.device) -> t
                 )
                 results.append({"dataset": path.stem, "repetition": repetition, "n_target": size,
                                 "strategy": strategy, "rmse": rmse(model, test_ds, device),
+                                "oracle_rmse": oracle_rmse,
                                 "best_epoch": best_epoch, "best_validation_mse": val_loss, "seed": model_seed})
         splits["repetitions"][str(repetition)] = rep_splits
         print(f"{path.stem}: repetition {repetition}/{args.repetitions} terminee", flush=True)
     splits["standardization"] = {"mean": mean.tolist(), "std": std.tolist()}
+    splits["oracle_rmse"] = oracle_rmse
     return results, splits
 
 

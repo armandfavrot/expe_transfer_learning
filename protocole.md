@@ -212,7 +212,17 @@ Pour chaque jeu de données, les découpages initiaux sont réalisés une seule 
    \sum_{q=1}^{N_{\mathrm{test}}}(Y_q-\widehat{Y}_q)^2}.
    $$
 
-4. Pour chaque modèle générateur, chaque stratégie et chaque valeur de $n$, représenter par un boxplot les dix RMSE obtenues. Les observations individuelles seront superposées aux boxplots afin de rendre visibles les dix répétitions. Les trois stratégies comparées sont le fine-tuning, l'entraînement cible *from scratch* et l'apprentissage combiné source-cible.
+   h. appliquer également la fonction génératrice exacte $f$ aux variables explicatives de ce même jeu de test, sans ajouter un nouveau bruit, et calculer
+
+   $$
+   \operatorname{RMSE}_{\mathrm{oracle}}
+   = \sqrt{\frac{1}{N_{\mathrm{test}}}
+   \sum_{q=1}^{N_{\mathrm{test}}}(Y_q-f(X_q))^2}.
+   $$
+
+   Cette valeur est calculée une seule fois par modèle générateur, puisque le jeu de test est fixe et commun à toutes les répétitions.
+
+4. Pour chaque modèle générateur, chaque stratégie et chaque valeur de $n$, représenter par un boxplot les dix RMSE obtenues. Les observations individuelles seront superposées aux boxplots afin de rendre visibles les dix répétitions. Les trois stratégies comparées sont le fine-tuning, l'entraînement cible *from scratch* et l'apprentissage combiné source-cible. Une ligne horizontale noire pointillée indique, sur chaque panneau, la $\operatorname{RMSE}_{\mathrm{oracle}}$ du modèle générateur correspondant.
 
 ## Plancher de RMSE lié au bruit
 

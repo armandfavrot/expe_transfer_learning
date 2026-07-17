@@ -38,16 +38,24 @@ def plot_rmse(results_path: Path, output_dir: Path) -> None:
     order = ["Fine-tuning", "From scratch", "Combine"]
     for ax, model in zip(axes, ("Modele 1", "Modele 2"), strict=True):
         subset = results[results["Modele generateur"] == model]
+        oracle_values = subset["oracle_rmse"].dropna().unique()
+        if len(oracle_values) != 1:
+            raise ValueError(f"Une unique RMSE oracle est attendue pour {model}.")
+        oracle_rmse = oracle_values[0]
         sns.boxplot(data=subset, x="n cible", y="rmse", hue="Strategie", hue_order=order,
                     palette=palette, showfliers=False, ax=ax)
         sns.stripplot(data=subset, x="n cible", y="rmse", hue="Strategie", hue_order=order,
                       dodge=True, palette=palette, alpha=0.75, size=4, linewidth=0.3, ax=ax)
         ax.set(title=model, xlabel="Taille de l'echantillon cible", ylabel="RMSE")
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles[:3], labels[:3], title="Strategie")
+        oracle_line = ax.axhline(oracle_rmse, color="black", linestyle="--", linewidth=1.5,
+                                 label=f"Modele generateur (RMSE = {oracle_rmse:.3f})")
+        ax.legend(handles[:3] + [oracle_line], labels[:3] + [oracle_line.get_label()], title="Strategie")
     fig.suptitle("Performance sur le jeu de test cible fixe")
     fig.tight_layout()
     fig.savefig(output_dir / "rmse_boxplots.pdf", bbox_inches="tight")
+    # Apercu vectoriel affichable directement dans le README GitHub.
+    fig.savefig(output_dir / "rmse_boxplots.svg", bbox_inches="tight")
     plt.close(fig)
 
 
