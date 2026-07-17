@@ -188,15 +188,15 @@ Pour chaque jeu de données, les découpages initiaux sont réalisés une seule 
 
    a. entraîner, depuis une nouvelle initialisation aléatoire, un MLP sur le jeu d'entraînement source fixe, en utilisant le jeu de validation source fixe pour l'arrêt anticipé. Le réseau obtenu constitue le modèle préentraîné de la répétition $r$ ;
 
-   b. tirer aléatoirement 200 observations dans le réservoir d'apprentissage cible, puis construire des échantillons emboîtés
+   b. utiliser les 500 observations du réservoir d'apprentissage cible pour construire des échantillons emboîtés
 
    $$
-   S_{10}^{(r)} \subset S_{50}^{(r)} \subset S_{100}^{(r)} \subset S_{200}^{(r)}.
+   S_{10}^{(r)} \subset S_{50}^{(r)} \subset S_{100}^{(r)} \subset S_{200}^{(r)} \subset S_{500}^{(r)}.
    $$
 
    La répartition des modalités de $X_2$ est rendue aussi équilibrée que possible dans chaque échantillon ;
 
-   c. pour chaque taille $n \in \{10,50,100,200\}$, réserver aléatoirement 20 % de $S_n^{(r)}$ pour la validation cible. Les effectifs d'entraînement et de validation sont respectivement $(8,2)$, $(40,10)$, $(80,20)$ et $(160,40)$. Les mêmes sous-ensembles sont utilisés par les trois stratégies ;
+   c. pour chaque taille $n \in \{10,50,100,200,500\}$, réserver aléatoirement 20 % de $S_n^{(r)}$ pour la validation cible. Les effectifs d'entraînement et de validation sont respectivement $(8,2)$, $(40,10)$, $(80,20)$, $(160,40)$ et $(400,100)$. Les mêmes sous-ensembles sont utilisés par les trois stratégies ;
 
    d. affiner une copie du modèle préentraîné de la répétition $r$ (*fine-tuning*) à partir du sous-ensemble d'entraînement cible, avec un arrêt anticipé fondé sur la validation cible ;
 

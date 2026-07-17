@@ -20,7 +20,7 @@ Les résultats mettent principalement en évidence l'intérêt du transfert pour
 
 ## Protocole expérimental
 
-Chaque jeu simulé contient 2 000 observations réparties entre un domaine source et un domaine cible. Le domaine cible est séparé en un jeu de test fixe de 500 observations et un réservoir d'apprentissage de 500 observations. Des échantillons cibles emboîtés de tailles 10, 50, 100 et 200 sont tirés à chacune des dix répétitions.
+Chaque jeu simulé contient 2 000 observations réparties entre un domaine source et un domaine cible. Le domaine cible est séparé en un jeu de test fixe de 500 observations et un réservoir d'apprentissage de 500 observations. Des échantillons cibles emboîtés de tailles 10, 50, 100, 200 et 500 sont tirés à chacune des dix répétitions.
 
 Le prédicteur est un MLP PyTorch utilisant des embeddings pour les variables catégorielles. Tous les entraînements utilisent un arrêt anticipé fondé sur un jeu de validation. Les trois stratégies partagent les mêmes échantillons d'apprentissage, de validation et de test afin de permettre une comparaison directe.
 
@@ -83,4 +83,3 @@ visualize_results.py   Création des figures
 protocole.md           Description détaillée du protocole expérimental
 requirements.txt       Dépendances Python
 ```
-

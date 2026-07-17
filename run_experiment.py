@@ -72,16 +72,16 @@ def stratified_indices(indices: np.ndarray, labels: np.ndarray, n: int, rng: np.
 
 
 def nested_target_samples(pool: np.ndarray, labels: np.ndarray, rng: np.random.Generator) -> dict[int, np.ndarray]:
-    # Un ordre stratifie par blocs garantit S10 subset S50 subset S100 subset S200 et l'equilibre.
+    # Un ordre stratifie par blocs garantit l'emboitement des echantillons et leur equilibre.
     per_class = {c: rng.permutation(pool[labels[pool] == c]).tolist() for c in np.unique(labels[pool])}
     order = []
     class_order = rng.permutation(list(per_class))
-    while len(order) < 200:
+    while len(order) < 500:
         for cls in class_order:
-            if per_class[cls] and len(order) < 200:
+            if per_class[cls] and len(order) < 500:
                 order.append(per_class[cls].pop())
     selected = np.asarray(order, dtype=int)
-    return {n: selected[:n].copy() for n in (10, 50, 100, 200)}
+    return {n: selected[:n].copy() for n in (10, 50, 100, 200, 500)}
 
 
 def split_train_validation(sample: np.ndarray, labels: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
