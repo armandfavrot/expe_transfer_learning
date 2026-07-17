@@ -22,11 +22,11 @@ def set_seed(seed: int) -> np.random.Generator:
 
 
 def balanced_design(rng: np.random.Generator) -> pd.DataFrame:
-    # 167 + 167 + 166 = 500 observations dans chaque domaine.
+    # 334 + 333 + 333 = 1 000 observations dans chaque domaine.
     rows = [
         (x1, x2)
         for x1 in X1_LEVELS
-        for x2, count in zip(X2_LEVELS, (167, 167, 166), strict=True)
+        for x2, count in zip(X2_LEVELS, (334, 333, 333), strict=True)
         for _ in range(count)
     ]
     rng.shuffle(rows)
@@ -83,7 +83,7 @@ def main() -> None:
         data.to_csv(path, index=False)
         generated[model] = str(path)
 
-    metadata = {"seed": args.seed, "n_per_model": 1000, "files": generated}
+    metadata = {"seed": args.seed, "n_per_model": 2000, "files": generated}
     (args.output_dir / "simulation_metadata.json").write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )

@@ -151,7 +151,7 @@ Ces valeurs induisent des différences entre les domaines qui dépendent de la m
 
 Pour chacun des deux modèles, la simulation suivra les étapes suivantes :
 
-1. Construire un tableau de $n=1\,000$ observations contenant $X_1$ et $X_2$. Les observations seront réparties de manière aussi équilibrée que possible entre les six combinaisons de modalités de $(X_1,X_2)$, soit 166 ou 167 observations par combinaison.
+1. Construire un tableau de $n=2\,000$ observations contenant $X_1$ et $X_2$. Les observations seront réparties de manière aussi équilibrée que possible entre les six combinaisons de modalités de $(X_1,X_2)$, soit 333 ou 334 observations par combinaison.
 2. Ajouter les variables continues $X_3$ et $X_4$, générées indépendamment selon des lois normales centrées réduites :
 
    $$
@@ -182,27 +182,27 @@ Les quatre variables $X_1$, $X_2$, $X_3$ et $X_4$ sont utilisées comme entrées
 
 Pour chaque jeu de données, les découpages initiaux sont réalisés une seule fois :
 
-1. Réserver aléatoirement la moitié des 500 observations du domaine cible ($X_1=b_1$) pour constituer un jeu de test cible fixe. Les 250 observations restantes forment le réservoir d'apprentissage cible.
-2. Séparer une seule fois les 500 observations du domaine source ($X_1=a_1$) en un jeu d'entraînement source fixe (80 %, soit 400 observations) et un jeu de validation source fixe (20 %, soit 100 observations).
+1. Réserver aléatoirement la moitié des 1 000 observations du domaine cible ($X_1=b_1$) pour constituer un jeu de test cible fixe. Les 500 observations restantes forment le réservoir d'apprentissage cible.
+2. Séparer une seule fois les 1 000 observations du domaine source ($X_1=a_1$) en un jeu d'entraînement source fixe (80 %, soit 800 observations) et un jeu de validation source fixe (20 %, soit 200 observations).
 3. Pour chaque répétition $r \in \{1,\ldots,10\}$ :
 
    a. entraîner, depuis une nouvelle initialisation aléatoire, un MLP sur le jeu d'entraînement source fixe, en utilisant le jeu de validation source fixe pour l'arrêt anticipé. Le réseau obtenu constitue le modèle préentraîné de la répétition $r$ ;
 
-   b. tirer aléatoirement 100 observations dans le réservoir d'apprentissage cible, puis construire des échantillons emboîtés
+   b. tirer aléatoirement 200 observations dans le réservoir d'apprentissage cible, puis construire des échantillons emboîtés
 
    $$
-   S_{10}^{(r)} \subset S_{50}^{(r)} \subset S_{100}^{(r)}.
+   S_{10}^{(r)} \subset S_{50}^{(r)} \subset S_{100}^{(r)} \subset S_{200}^{(r)}.
    $$
 
    La répartition des modalités de $X_2$ est rendue aussi équilibrée que possible dans chaque échantillon ;
 
-   c. pour chaque taille $n \in \{10,50,100\}$, réserver aléatoirement 20 % de $S_n^{(r)}$ pour la validation cible. Les effectifs d'entraînement et de validation sont respectivement $(8,2)$, $(40,10)$ et $(80,20)$. Les mêmes sous-ensembles sont utilisés par les trois stratégies ;
+   c. pour chaque taille $n \in \{10,50,100,200\}$, réserver aléatoirement 20 % de $S_n^{(r)}$ pour la validation cible. Les effectifs d'entraînement et de validation sont respectivement $(8,2)$, $(40,10)$, $(80,20)$ et $(160,40)$. Les mêmes sous-ensembles sont utilisés par les trois stratégies ;
 
    d. affiner une copie du modèle préentraîné de la répétition $r$ (*fine-tuning*) à partir du sous-ensemble d'entraînement cible, avec un arrêt anticipé fondé sur la validation cible ;
 
    e. entraîner depuis une nouvelle initialisation aléatoire (*from scratch*) un deuxième MLP de même architecture sur les seuls sous-ensembles d'entraînement et de validation cibles ;
 
-   f. entraîner depuis une nouvelle initialisation aléatoire un troisième MLP sur l'ensemble combinant les 500 observations source et le sous-ensemble d'entraînement cible. Le sous-ensemble de validation cible guide l'arrêt anticipé. Ce réseau est appelé **modèle combiné** ;
+   f. entraîner depuis une nouvelle initialisation aléatoire un troisième MLP sur l'ensemble combinant les 1 000 observations source et le sous-ensemble d'entraînement cible. Le sous-ensemble de validation cible guide l'arrêt anticipé. Ce réseau est appelé **modèle combiné** ;
 
    g. évaluer les trois modèles sur le même jeu de test cible fixe et calculer leur racine de l'erreur quadratique moyenne (RMSE) :
 
@@ -213,6 +213,54 @@ Pour chaque jeu de données, les découpages initiaux sont réalisés une seule 
    $$
 
 4. Pour chaque modèle générateur, chaque stratégie et chaque valeur de $n$, représenter par un boxplot les dix RMSE obtenues. Les observations individuelles seront superposées aux boxplots afin de rendre visibles les dix répétitions. Les trois stratégies comparées sont le fine-tuning, l'entraînement cible *from scratch* et l'apprentissage combiné source-cible.
+
+## Plancher de RMSE lié au bruit
+
+Comme le terme d'erreur suit
+
+$$
+\varepsilon \sim \mathcal{N}(0,\sigma^2)
+$$
+
+et que la réponse $Y$ n'est pas standardisée, la RMSE irréductible dans la
+population est directement exprimée dans l'unité de $Y$ et vaut
+
+$$
+\operatorname{RMSE}_{\mathrm{irréductible}}
+= \sqrt{\mathbb{E}(\varepsilon^2)}
+= \sigma.
+$$
+
+Dans le scénario retenu, $\sigma=1$ : le plancher théorique de RMSE vaut donc
+1. Pour un prédicteur $\widehat f(X)$ de la fonction génératrice $f(X)$, l'erreur
+peut être décomposée, en population, sous la forme
+
+$$
+\mathbb{E}\!\left[(Y-\widehat f(X))^2\right]
+= \sigma^2
++ \mathbb{E}\!\left[(f(X)-\widehat f(X))^2\right],
+$$
+
+sous l'hypothèse que le bruit est centré et indépendant des variables
+explicatives. Le premier terme correspond au bruit irréductible ; le second
+regroupe les erreurs d'approximation et d'estimation du modèle.
+
+Sur un jeu de test fini, même le modèle oracle, qui connaît exactement $f$, ne
+présente pas nécessairement une RMSE égale à 1, car la variance empirique du
+bruit fluctue d'un échantillon à l'autre. Pour la graine de simulation et les
+jeux de test fixes de 500 observations utilisés dans cette expérience, la RMSE
+oracle propre à chaque modèle sera calculée à partir des réalisations du bruit
+sur son jeu de test et reportée avec les résultats.
+
+Ces valeurs constituent les références empiriques les plus pertinentes pour
+interpréter les résultats des MLP. Lorsque le nombre d'observations cibles
+augmente, un MLP suffisamment flexible et correctement entraîné devrait s'en
+rapprocher. Il peut néanmoins rester au-dessus à cause de la taille finie des
+échantillons d'entraînement et de validation, de l'optimisation, de l'arrêt
+anticipé, du *dropout*, de la régularisation et de sa capacité d'approximation.
+En outre, augmenter seulement le nombre d'observations sources ne garantit pas
+d'atteindre ce plancher dans le domaine cible lorsque les relations diffèrent
+entre les deux domaines.
 
 ## Arrêt anticipé
 

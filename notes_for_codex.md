@@ -1,9 +1,15 @@
-J'ai eu cet avertissement quand j'ai lancé ./run_experiment.py :
 
-florian@florian-Precision-3450:~/Documents/expe_transfer_learning$ python3 run_experiment.py
-Calcul sur cuda
-/home/florian/.pyenv/versions/expe_transfer_learning/lib/python3.12/site-packages/torch/nn/modules/linear.py:125: UserWarning: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:217.)
-  return F.linear(input, self.weight, self.bias)
-/home/florian/.pyenv/versions/expe_transfer_learning/lib/python3.12/site-packages/torch/autograd/graph.py:823: UserWarning: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:217.)
-  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+J'ai donc fait tourné les codes, et je trouve les résultats intéressant. Une question que je me pose est la suivante : à quelle rmse correspond l'erreur lié au bruit du modèle via le terme epsilon (avec sigma = 1) ? Et normalement, j'imagine que s'il y a suffisament d'observation pour l'entrainement, les mlp devraient atteindre cette erreur ? 
+
+Ok, alors peux tu mettre à jour le protocole avec n = 2000 au lieu de 1000 pour la taille des jeux de données simulées, et ensuite doubler la taille de tous les jeux de données qui en découle, sauf la taille des jeux de données des échantillons cibles : pour le moment on teste 10, 50, 100, il faudrait changer par 10, 50, 100, 200.
+
+
+
+
+
+
+
+
+
+
 

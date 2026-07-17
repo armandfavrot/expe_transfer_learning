@@ -24,7 +24,7 @@ def plot_simulated(data_dir: Path, output_dir: Path) -> None:
                        fill=True, common_norm=False, height=4, aspect=1.15)
     grid.set_axis_labels("Y", "Densite")
     grid.figure.suptitle("Distribution de Y selon le domaine", y=1.04)
-    grid.savefig(output_dir / "distribution_y_par_domaine.png", dpi=300, bbox_inches="tight")
+    grid.savefig(output_dir / "distribution_y_par_domaine.pdf", bbox_inches="tight")
     plt.close(grid.figure)
 
 
@@ -47,7 +47,7 @@ def plot_rmse(results_path: Path, output_dir: Path) -> None:
         ax.legend(handles[:3], labels[:3], title="Strategie")
     fig.suptitle("Performance sur le jeu de test cible fixe")
     fig.tight_layout()
-    fig.savefig(output_dir / "rmse_boxplots.png", dpi=300, bbox_inches="tight")
+    fig.savefig(output_dir / "rmse_boxplots.pdf", bbox_inches="tight")
     plt.close(fig)
 
 

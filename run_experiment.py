@@ -72,16 +72,16 @@ def stratified_indices(indices: np.ndarray, labels: np.ndarray, n: int, rng: np.
 
 
 def nested_target_samples(pool: np.ndarray, labels: np.ndarray, rng: np.random.Generator) -> dict[int, np.ndarray]:
-    # Un ordre stratifie par blocs garantit S10 subset S50 subset S100 et l'equilibre.
+    # Un ordre stratifie par blocs garantit S10 subset S50 subset S100 subset S200 et l'equilibre.
     per_class = {c: rng.permutation(pool[labels[pool] == c]).tolist() for c in np.unique(labels[pool])}
     order = []
     class_order = rng.permutation(list(per_class))
-    while len(order) < 100:
+    while len(order) < 200:
         for cls in class_order:
-            if per_class[cls] and len(order) < 100:
+            if per_class[cls] and len(order) < 200:
                 order.append(per_class[cls].pop())
     selected = np.asarray(order, dtype=int)
-    return {n: selected[:n].copy() for n in (10, 50, 100)}
+    return {n: selected[:n].copy() for n in (10, 50, 100, 200)}
 
 
 def split_train_validation(sample: np.ndarray, labels: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
@@ -154,9 +154,9 @@ def run_dataset(path: Path, args: argparse.Namespace, device: torch.device) -> t
     source = np.flatnonzero(data["X1"].to_numpy() == "a1")
     target = np.flatnonzero(data["X1"].to_numpy() == "b1")
     split_rng = np.random.default_rng(args.split_seed)
-    target_test = stratified_indices(target, labels, 250, split_rng)
+    target_test = stratified_indices(target, labels, 500, split_rng)
     target_pool = np.asarray([i for i in target if i not in set(target_test)], dtype=int)
-    source_val = stratified_indices(source, labels, 100, split_rng)
+    source_val = stratified_indices(source, labels, 200, split_rng)
     source_train = np.asarray([i for i in source if i not in set(source_val)], dtype=int)
     mean = data.iloc[source_train][["X3", "X4"]].mean().to_numpy()
     std = data.iloc[source_train][["X3", "X4"]].std(ddof=0).to_numpy()
