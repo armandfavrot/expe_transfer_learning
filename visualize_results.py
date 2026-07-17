@@ -35,7 +35,7 @@ def plot_rmse(results_path: Path, output_dir: Path) -> None:
     results["n cible"] = results["n_target"].astype(str)
     fig, axes = plt.subplots(1, 2, figsize=(13, 5), sharey=False)
     palette = sns.color_palette("colorblind", 3)
-    order = ["Fine-tuning", "From scratch", "Combine"]
+    order = ["From scratch", "Fine-tuning", "Combine"]
     for ax, model in zip(axes, ("Modele 1", "Modele 2"), strict=True):
         subset = results[results["Modele generateur"] == model]
         oracle_values = subset["oracle_rmse"].dropna().unique()
