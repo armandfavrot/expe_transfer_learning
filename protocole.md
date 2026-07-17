@@ -1,6 +1,6 @@
 ---
-title: "Protocole expérimental"
-subtitle: "Évaluation du fine-tuning pour le transfert d'apprentissage en régression"
+title: "Évaluation du fine-tuning pour le transfert d'apprentissage en régression"
+subtitle: "Protocole expérimental"
 lang: fr-FR
 date: "16 juillet 2026"
 papersize: a4
@@ -12,9 +12,11 @@ fontsize: 11pt
 
 L'objectif de cette expérience est d'évaluer le **fine-tuning** comme approche de transfert d'apprentissage dans un problème de régression à partir de données simulées.
 
-La première étape consiste à simuler deux jeux de données, un pour chaque modèle générateur. Dans chacun d'eux, les observations sont réparties entre un **domaine source** et un **domaine cible**. Plusieurs stratégies d'apprentissage sur le domaine cible seront ensuite comparées afin de mesurer l'intérêt du transfert depuis le domaine source.
+Cette expérience se déroule en deux étapes. La première consiste à simuler deux jeux de données, chacun étant généré par un modèle différent. Dans chacun de ces jeux de données, les observations sont réparties entre un **domaine source** et un **domaine cible**. La seconde étape consiste à mettre en œuvre plusieurs stratégies d'apprentissage sur le domaine cible, puis à comparer leurs performances.
 
-# Variables simulées
+# Simulation des données
+
+## Variables explicatives
 
 On considère quatre variables explicatives : deux variables catégorielles et deux variables continues.
 
@@ -29,11 +31,11 @@ La variable $X_1$ distingue les deux domaines : une modalité correspond au doma
 
 Pour les équations ci-dessous, $i \in \{1,2\}$ désigne la modalité de $X_1$, $j \in \{1,2,3\}$ celle de $X_2$ et $k$ indexe les observations appartenant à la combinaison $(i,j)$.
 
-# Modèles générateurs
+## Modèles générateurs
 
 Deux mécanismes de génération sont envisagés. Ils permettent de faire varier la complexité de la relation entre les variables explicatives et la réponse.
 
-## Modèle 1 : effets principaux et pente propre au domaine
+### Modèle 1 : effets principaux et pente propre au domaine
 
 $$
 \mathcal{M}_1:\qquad
@@ -45,7 +47,7 @@ $$
 
 Ce premier modèle comprend les effets principaux de $X_1$ et $X_2$, ainsi qu'une interaction entre $X_1$ et $X_3$. La pente associée à $X_3$ peut donc différer entre les domaines source et cible.
 
-## Modèle 2 : interactions d'ordre supérieur
+### Modèle 2 : interactions d'ordre supérieur
 
 $$
 \mathcal{M}_2:\qquad
@@ -58,7 +60,7 @@ $$
 
 Le second modèle introduit un effet propre à chaque combinaison des modalités de $X_1$ et $X_2$, une pente de $X_3$ propre à chacune de ces combinaisons, ainsi qu’une interaction entre $X_2$, $X_3$ et $X_4$. Il représente ainsi un mécanisme de génération plus complexe.
 
-# Définition des paramètres
+## Définition des paramètres
 
 - $\mu$ est l'ordonnée à l'origine globale ;
 - $\mu_{1,i}$ est l'effet associé à la modalité $i$ de $X_1$ ;
@@ -75,11 +77,11 @@ Le second modèle introduit un effet propre à chaque combinaison des modalités
   \varepsilon_{ijk} \overset{\mathrm{i.i.d.}}{\sim} \mathcal{N}(0,\sigma^2).
   $$
 
-# Proposition de valeurs des paramètres
+## Proposition de valeurs des paramètres
 
 On associe $a_1$ au domaine source et $b_1$ au domaine cible. Les valeurs ci-dessous constituent un premier scénario de simulation : elles créent une différence modérée entre les deux domaines, tout en conservant un rapport signal sur bruit suffisant pour faire apparaître la structure des modèles.
 
-## Paramètres du modèle 1
+### Paramètres du modèle 1
 
 On propose :
 
@@ -102,9 +104,9 @@ X_2 & a_2 & b_2 & c_2 \\
 \end{array}.
 $$
 
-Dans ce scénario, le domaine cible présente une réponse moyenne plus élevée d'une unité. La pente de $X_3$ vaut $1{,}5$ dans le domaine source et $1$ dans le domaine cible.
+Dans ce scénario, à valeurs identiques de $X_2$ et $X_3$, l'ordonnée à l'origine du domaine cible est supérieure d'une unité. En raison du décalage de la distribution de $X_3$ introduit plus loin, la différence marginale entre les réponses moyennes des deux domaines n'est toutefois pas égale à une unité. La pente de $X_3$ vaut $1{,}5$ dans le domaine source et $1$ dans le domaine cible.
 
-## Paramètres du modèle 2
+### Paramètres du modèle 2
 
 On propose :
 
@@ -147,11 +149,11 @@ $$
 
 Ces valeurs induisent des différences entre les domaines qui dépendent de la modalité de $X_2$. La pente de $X_3$ varie selon chaque combinaison de $X_1$ et $X_2$, tandis que l’effet de l’interaction $X_3X_4$ varie selon $X_2$. Le second scénario est ainsi plus complexe que le premier, tout en gardant des coefficients d’amplitude comparable.
 
-# Protocole de simulation des données
+## Protocole de simulation des données
 
 Pour chacun des deux modèles, la simulation suivra les étapes suivantes :
 
-1. Construire un tableau de $n=2\,000$ observations contenant $X_1$ et $X_2$. Les observations seront réparties de manière aussi équilibrée que possible entre les six combinaisons de modalités de $(X_1,X_2)$, soit 333 ou 334 observations par combinaison.
+1. Construire un tableau de $N=2\,000$ observations contenant $X_1$ et $X_2$. Les observations seront réparties de manière aussi équilibrée que possible entre les six combinaisons de modalités de $(X_1,X_2)$, soit 333 ou 334 observations par combinaison.
 2. Ajouter les variables continues $X_3$ et $X_4$. Afin d'introduire un décalage modéré des covariables entre les domaines source et cible, leurs lois conditionnelles à $X_1$ sont définies par :
 
    $$
@@ -168,47 +170,72 @@ Pour chacun des deux modèles, la simulation suivra les étapes suivantes :
 
 Cette procédure produira deux jeux de données simulées, un pour chaque modèle générateur.
 
-# Visualisation des données simulées
+## Visualisation des données simulées
 
-Pour chacun des deux jeux de données, représenter la distribution de la réponse $Y$ en fonction de $X_1$. Cette visualisation permettra de comparer les distributions obtenues dans les domaines source et cible.
+Pour chacun des deux jeux de données :
 
-# Environnement de mise en œuvre
-
-Le protocole sera implémenté en **Python**. La bibliothèque **PyTorch** sera utilisée pour définir les embeddings et les MLP, entraîner les modèles, appliquer l'arrêt anticipé et produire les prédictions. Les bibliothèques NumPy et pandas pourront être utilisées pour la manipulation des données, tandis que Matplotlib et Seaborn serviront à réaliser les visualisations.
-
-Afin de garantir la reproductibilité, les versions de Python et des bibliothèques seront enregistrées. Les graines aléatoires de Python, NumPy et PyTorch seront fixées et sauvegardées pour les découpages initiaux ainsi que pour chacune des dix répétitions. Si l'expérience est exécutée sur GPU, les options déterministes de PyTorch seront activées dans la mesure du possible.
+- représenter la distribution de la réponse $Y$ en fonction de $X_1$, afin de comparer les distributions obtenues dans les domaines source et cible ;
+- représenter séparément les distributions de $X_3$ et de $X_4$ en fonction de $X_1$, afin de visualiser le *covariate shift* introduit entre les domaines. Les graphiques devront notamment faire apparaître le déplacement des moyennes et l'augmentation de la dispersion dans le domaine cible, tout en permettant d'évaluer le recouvrement entre les distributions source et cible.
 
 # Expérience de transfert d'apprentissage par fine-tuning
 
-L'expérience est conduite séparément sur chacun des deux jeux de données simulées. Conformément aux conventions précédentes, $a_1$ désigne le domaine source et $b_1$ le domaine cible.
+Dans cette partie, l'objectif est de construire un modèle de prédiction performant sur le domaine cible, tout en disposant d'un nombre limité $n_{\text{lim}}$ d'observations cibles pour l'entraînement. L'approche évaluée consiste à préentraîner un réseau de neurones sur les observations du domaine source, puis à l'adapter par fine-tuning à l'aide des $n_{\text{lim}}$ observations du domaine cible.
 
-Les quatre variables $X_1$, $X_2$, $X_3$ et $X_4$ sont utilisées comme entrées des réseaux, après un prétraitement identique pour toutes les méthodes. Les variables catégorielles $X_1$ et $X_2$ sont représentées par des embeddings appris conjointement avec le réseau. Les modalités sont encodées par des indices entiers avant leur passage dans les couches d'embedding.
+Comme points de comparaison, nous utiliserons :
 
-Pour chaque jeu de données, les découpages initiaux sont réalisés une seule fois :
+un réseau de neurones entraîné uniquement sur le même nombre limité d'observations cibles ;
+un modèle combiné, entraîné simultanément sur les observations du domaine source et sur les $n_{\text{lim}}$ observations du domaine cible.
 
-1. Réserver aléatoirement la moitié des 1 000 observations du domaine cible ($X_1=b_1$) pour constituer un jeu de test cible fixe. Les 500 observations restantes forment le réservoir d'apprentissage cible.
-2. Séparer une seule fois les 1 000 observations du domaine source ($X_1=a_1$) en un jeu d'entraînement source fixe (80 %, soit 800 observations) et un jeu de validation source fixe (20 %, soit 200 observations).
-3. Pour chaque répétition $r \in \{1,\ldots,10\}$ :
+Cette expérience sera menée séparément sur chacun des deux jeux de données simulés. Conformément aux conventions introduites précédemment, $a_1$ désigne le domaine source et $b_1$ le domaine cible.
 
-   a. entraîner, depuis une nouvelle initialisation aléatoire, un MLP sur le jeu d'entraînement source fixe, en utilisant le jeu de validation source fixe pour l'arrêt anticipé. Le réseau obtenu constitue le modèle préentraîné de la répétition $r$ ;
+## Prétraitement des variables
 
-   b. utiliser les 500 observations du réservoir d'apprentissage cible pour construire des échantillons emboîtés
+Les variables utilisées en entrée diffèrent selon la stratégie :
+
+- le modèle préentraîné sur la source, le modèle obtenu par fine-tuning et le modèle cible entraîné *from scratch* utilisent uniquement $X_2$, $X_3$ et $X_4$ ;
+- le modèle combiné utilise $X_1$, $X_2$, $X_3$ et $X_4$, car il est le seul à être entraîné simultanément sur les deux domaines.
+
+Le prétraitement est défini comme suit :
+
+- pour toutes les stratégies, les modalités de $X_2$ sont converties en indices entiers, avec $a_2 \mapsto 0$, $b_2 \mapsto 1$ et $c_2 \mapsto 2$, puis transmises à une couche d'embedding ;
+- pour le seul modèle combiné, les modalités de $X_1$ sont converties en indices entiers, avec $a_1 \mapsto 0$ et $b_1 \mapsto 1$, puis transmises à une couche d'embedding spécifique ;
+- pour toutes les stratégies, les variables continues $X_3$ et $X_4$ sont centrées et réduites à partir des moyennes et écarts-types calculés **uniquement sur le jeu d'entraînement source** :
+
+  $$
+  X_j^{\star}=\frac{X_j-\widehat{\mu}_{j,\mathrm{source}}}
+  {\widehat{\sigma}_{j,\mathrm{source}}},
+  \qquad j\in\{3,4\}.
+  $$
+
+Une fois estimées, ces statistiques source sont conservées sans modification et appliquées aux jeux source et cible, d'entraînement, de validation et de test, ainsi qu'aux trois stratégies. Aucune moyenne ni aucun écart-type n'est donc recalculé à partir des données cibles ou du jeu de test. Cette transformation ne supprime pas le *covariate shift*, puisque toutes les observations sont ramenées à la même référence source. La réponse $Y$ n'est pas standardisée.
+
+## Etapes de l'expérience
+
+Pour chaque jeu de données, réaliser dix répétitions utilisant des graines aléatoires distinctes. Pour chaque répétition $r\in\{1,\ldots,10\}$ :
+
+1. Répartir aléatoirement, en conservant une distribution aussi équilibrée que possible de $X_2$, les 1 000 observations du domaine cible ($X_1=b_1$) entre un jeu de test cible de 500 observations et un réservoir d'apprentissage cible de 500 observations.
+
+2. Répartir de la même manière les 1 000 observations du domaine source ($X_1=a_1$) entre un jeu d'entraînement source de 800 observations et un jeu de validation source de 200 observations.
+
+3. Calculer les moyennes et écarts-types de $X_3$ et $X_4$ uniquement sur le jeu d'entraînement source de la répétition, puis appliquer cette standardisation à tous les sous-ensembles de la répétition.
+
+4. Entraîner, depuis une nouvelle initialisation aléatoire, un MLP sur le jeu d'entraînement source, en utilisant le jeu de validation source pour l'arrêt anticipé.
+
+5. Utiliser les 500 observations du réservoir d'apprentissage cible pour construire aléatoirement des échantillons emboîtés, en conservant une répartition aussi équilibrée que possible de $X_2$ :
 
    $$
-   S_{10}^{(r)} \subset S_{50}^{(r)} \subset S_{100}^{(r)} \subset S_{200}^{(r)} \subset S_{500}^{(r)}.
+   S_{10} \subset S_{50} \subset S_{100} \subset S_{200} \subset S_{500}.
    $$
 
-   La répartition des modalités de $X_2$ est rendue aussi équilibrée que possible dans chaque échantillon ;
+6. Pour chaque taille $n\in\{10,50,100,200,500\}$, réserver aléatoirement 20 % de $S_n$ pour la validation cible. Les effectifs d'entraînement et de validation sont respectivement $(8,2)$, $(40,10)$, $(80,20)$, $(160,40)$ et $(400,100)$. Les trois stratégies utilisent exactement les mêmes sous-ensembles cibles au sein de la répétition.
 
-   c. pour chaque taille $n \in \{10,50,100,200,500\}$, réserver aléatoirement 20 % de $S_n^{(r)}$ pour la validation cible. Les effectifs d'entraînement et de validation sont respectivement $(8,2)$, $(40,10)$, $(80,20)$, $(160,40)$ et $(400,100)$. Les mêmes sous-ensembles sont utilisés par les trois stratégies ;
+7. Affiner une copie du modèle préentraîné (*fine-tuning*) à partir du sous-ensemble d'entraînement cible, sans utiliser $X_1$ comme entrée, avec un arrêt anticipé fondé sur la validation cible.
 
-   d. affiner une copie du modèle préentraîné de la répétition $r$ (*fine-tuning*) à partir du sous-ensemble d'entraînement cible, avec un arrêt anticipé fondé sur la validation cible ;
+8. Entraîner depuis une nouvelle initialisation aléatoire (*from scratch*) un deuxième MLP utilisant uniquement $X_2$, $X_3$ et $X_4$ sur les sous-ensembles d'entraînement et de validation cibles.
 
-   e. entraîner depuis une nouvelle initialisation aléatoire (*from scratch*) un deuxième MLP de même architecture sur les seuls sous-ensembles d'entraînement et de validation cibles ;
+9. Entraîner depuis une nouvelle initialisation aléatoire un troisième MLP utilisant $X_1$, $X_2$, $X_3$ et $X_4$ sur l'ensemble combinant les 1 000 observations source et le sous-ensemble d'entraînement cible. Le sous-ensemble de validation cible guide l'arrêt anticipé. Ce réseau est appelé **modèle combiné**.
 
-   f. entraîner depuis une nouvelle initialisation aléatoire un troisième MLP sur l'ensemble combinant les 1 000 observations source et le sous-ensemble d'entraînement cible. Le sous-ensemble de validation cible guide l'arrêt anticipé. Ce réseau est appelé **modèle combiné** ;
-
-   g. évaluer les trois modèles sur le même jeu de test cible fixe et calculer leur racine de l'erreur quadratique moyenne (RMSE) :
+10. Évaluer les trois modèles sur le jeu de test cible de la répétition et calculer leur racine de l'erreur quadratique moyenne (RMSE) :
 
    $$
    \operatorname{RMSE}
@@ -216,7 +243,7 @@ Pour chaque jeu de données, les découpages initiaux sont réalisés une seule 
    \sum_{q=1}^{N_{\mathrm{test}}}(Y_q-\widehat{Y}_q)^2}.
    $$
 
-   h. appliquer également la fonction génératrice exacte $f$ aux variables explicatives de ce même jeu de test, sans ajouter un nouveau bruit, et calculer
+11. Appliquer également la fonction génératrice exacte $f$ aux variables explicatives de ce même jeu de test, sans ajouter un nouveau bruit, et calculer
 
    $$
    \operatorname{RMSE}_{\mathrm{oracle}}
@@ -224,9 +251,9 @@ Pour chaque jeu de données, les découpages initiaux sont réalisés une seule 
    \sum_{q=1}^{N_{\mathrm{test}}}(Y_q-f(X_q))^2}.
    $$
 
-   Cette valeur est calculée une seule fois par modèle générateur, puisque le jeu de test est fixe et commun à toutes les répétitions.
+## Visualisation des résultats
 
-4. Pour chaque modèle générateur, chaque stratégie et chaque valeur de $n$, représenter par un boxplot les dix RMSE obtenues. Les observations individuelles seront superposées aux boxplots afin de rendre visibles les dix répétitions. Les trois stratégies comparées sont le fine-tuning, l'entraînement cible *from scratch* et l'apprentissage combiné source-cible. Une ligne horizontale noire pointillée indique, sur chaque panneau, la $\operatorname{RMSE}_{\mathrm{oracle}}$ du modèle générateur correspondant.
+Pour chaque modèle générateur, chaque stratégie et chaque valeur de $n$, représenter par un boxplot les dix RMSE obtenues. Les observations individuelles seront superposées aux boxplots afin de rendre visibles les dix répétitions. Les trois stratégies comparées sont le fine-tuning, l'entraînement cible *from scratch* et l'apprentissage combiné source-cible. Une ligne horizontale noire pointillée indique, sur chaque panneau, la moyenne des dix $\operatorname{RMSE}_{\mathrm{oracle}}$ obtenues sur les dix jeux de test renouvelés du modèle générateur correspondant.
 
 ## Plancher de RMSE lié au bruit
 
@@ -261,10 +288,7 @@ regroupe les erreurs d'approximation et d'estimation du modèle.
 
 Sur un jeu de test fini, même le modèle oracle, qui connaît exactement $f$, ne
 présente pas nécessairement une RMSE égale à 1, car la variance empirique du
-bruit fluctue d'un échantillon à l'autre. Pour la graine de simulation et les
-jeux de test fixes de 500 observations utilisés dans cette expérience, la RMSE
-oracle propre à chaque modèle sera calculée à partir des réalisations du bruit
-sur son jeu de test et reportée avec les résultats.
+bruit fluctue d'un échantillon à l'autre. Pour la graine de simulation retenue, une RMSE oracle est calculée séparément sur le jeu de test de chaque répétition. Ses fluctuations reflètent les différentes observations incluses dans les dix jeux de test. La moyenne de ces dix RMSE oracle est reportée avec les résultats.
 
 Ces valeurs constituent les références empiriques les plus pertinentes pour
 interpréter les résultats des MLP. Lorsque le nombre d'observations cibles
@@ -282,16 +306,34 @@ Pour chaque entraînement, la fonction de perte est évaluée sur le jeu de vali
 
 Le jeu de validation cible est strictement identique pour les trois stratégies au sein d'une répétition. Avec seulement deux observations de validation lorsque $n=10$, le critère d'arrêt est nécessairement instable ; les répétitions permettront de mesurer la variabilité qui en résulte.
 
+### Sauvegarde et visualisation des courbes d'apprentissage
+
+Pour chaque entraînement, la MSE sur le jeu d'entraînement et la MSE sur le jeu de validation sont enregistrées à la fin de chaque époque. Le fichier de résultats associé aux courbes d'apprentissage contient au minimum : le modèle générateur, le numéro de répétition, le type d'entraînement, la taille $n$ de l'échantillon cible lorsqu'elle s'applique, le numéro de l'époque, la MSE d'entraînement, la MSE de validation et l'époque retenue par l'arrêt anticipé.
+
+Avec cinq tailles $n\in\{10,50,100,200,500\}$, le nombre de courbes est, pour chaque jeu de données simulé :
+
+- $10\times2=20$ courbes pour le préentraînement source : une courbe d'entraînement et une courbe de validation pour chacune des dix répétitions ;
+- $10\times5\times3\times2=300$ courbes pour les trois stratégies cibles : dix répétitions, cinq valeurs de $n$, trois stratégies et deux courbes par entraînement.
+
+Cela représente 320 courbes par modèle générateur, soit 640 courbes pour l'ensemble de l'expérience. Afin de conserver une visualisation lisible, les courbes sont organisées de la manière suivante :
+
+1. **Préentraînement source.** Pour chaque modèle générateur, une figure est divisée en dix panneaux, un par répétition. Chaque panneau contient la MSE d'entraînement et la MSE de validation en fonction de l'époque. L'époque correspondant à la meilleure perte de validation est indiquée par une ligne verticale.
+2. **Adaptation au domaine cible.** Pour chaque modèle générateur, une grille synthétique comporte trois lignes, correspondant au fine-tuning, à l'entraînement *from scratch* et au modèle combiné, et cinq colonnes, correspondant aux cinq valeurs de $n$. Dans chaque panneau, les courbes des dix répétitions sont superposées avec une forte transparence : une couleur est utilisée pour l'entraînement et une autre pour la validation. La médiane des pertes disponibles à chaque époque est ajoutée sous la forme d'une courbe plus épaisse.
+
+L'axe horizontal représente le nombre d'époques et l'axe vertical la MSE. Une échelle logarithmique pourra être utilisée pour l'axe des ordonnées si les pertes couvrent plusieurs ordres de grandeur. Les courbes individuelles sont conservées dans les fichiers de résultats, même lorsque seule la figure synthétique est présentée, afin de pouvoir examiner séparément une répétition présentant un comportement atypique.
 
 ## Architecture du MLP et paramètres d'entraînement
 
-Une architecture compacte est retenue afin de limiter le surapprentissage, en particulier lorsque peu d'observations cibles sont disponibles. Une dimension d'embedding de 1 est utilisée pour $X_1$, qui possède deux modalités, et une dimension de 2 pour $X_2$, qui en possède trois. Les deux embeddings sont concaténés avec les variables continues $X_3$ et $X_4$. La partie dense du réseau reçoit donc cinq valeurs : $1+2+1+1=5$.
+Une architecture compacte est retenue afin de limiter le surapprentissage, en particulier lorsque peu d'observations cibles sont disponibles. L'embedding de $X_2$ a une dimension de 2 et est utilisé par toutes les stratégies. L'embedding de $X_1$ a une dimension de 1 et n'est présent que dans le modèle combiné.
+
+Après concaténation, la partie dense reçoit quatre valeurs pour le préentraînement source, le fine-tuning et l'entraînement cible *from scratch* ($2+1+1=4$), contre cinq pour le modèle combiné ($1+2+1+1=5$).
 
 | Élément | Valeur proposée |
 |:--|:--|
-| Embedding de $X_1$ | 2 modalités $\rightarrow$ dimension 1 |
-| Embedding de $X_2$ | 3 modalités $\rightarrow$ dimension 2 |
-| Architecture dense après concaténation | 5 entrées $\rightarrow$ 32 neurones $\rightarrow$ 16 neurones $\rightarrow$ 1 sortie |
+| Embedding de $X_2$ | 3 modalités $\rightarrow$ dimension 2, pour toutes les stratégies |
+| Embedding de $X_1$ | 2 modalités $\rightarrow$ dimension 1, uniquement pour le modèle combiné |
+| Architecture dense — source, fine-tuning et *from scratch* | 4 entrées $\rightarrow$ 32 neurones $\rightarrow$ 16 neurones $\rightarrow$ 1 sortie |
+| Architecture dense — modèle combiné | 5 entrées $\rightarrow$ 32 neurones $\rightarrow$ 16 neurones $\rightarrow$ 1 sortie |
 | Activation des couches cachées | ReLU |
 | Activation de sortie | aucune (sortie linéaire) |
 | Fonction de perte | erreur quadratique moyenne (MSE) |
@@ -299,24 +341,23 @@ Une architecture compacte est retenue afin de limiter le surapprentissage, en pa
 | Taux d'apprentissage — préentraînement, *from scratch* et modèle combiné | $10^{-3}$ |
 | Taux d'apprentissage — fine-tuning | $10^{-4}$ |
 | Taille des lots | $\min(32,N_{\mathrm{train}})$ |
-| Pénalisation $L_2$ sur les poids | $10^{-4}$ |
+| *Weight decay* d'Adam | $10^{-4}$, appliqué à tous les paramètres entraînables (poids, biais et embeddings) |
 | Dropout | 0,1 après chaque couche cachée |
 | Nombre maximal d'époques | 500 |
 | Arrêt anticipé | patience de 20 époques, seuil minimal d'amélioration de $10^{-4}$ |
-| Initialisation | initialisation de He pour les couches denses ; petite initialisation aléatoire pour l'embedding de $X_2$ |
+| Initialisation | initialisation de He pour les couches denses ; petite initialisation aléatoire pour l'embedding de $X_2$ ; initialisation à zéro pour l'embedding de $X_1$ du modèle combiné |
 
-Le taux d'apprentissage plus faible lors du fine-tuning vise à adapter progressivement les poids préentraînés sans dégrader brutalement les représentations apprises sur le domaine source. Toutes les couches sont néanmoins laissées entraînables, car le réseau est petit et les différences entre les domaines peuvent concerner à la fois les effets principaux et les interactions.
-
-Pendant le préentraînement source, seule la ligne de l'embedding de $X_1$ correspondant à $a_1$ reçoit des gradients ; celle de $b_1$ n'est pas observée. Afin que la représentation initiale du domaine cible ne soit pas purement aléatoire, les deux lignes de cet embedding sont initialisées à zéro. La ligne associée à $a_1$ est apprise pendant le préentraînement, tandis que celle associée à $b_1$ peut être apprise pendant le fine-tuning ou l'apprentissage combiné. La même règle d'initialisation est appliquée aux trois stratégies. Tous les embeddings et toutes les couches denses restent entraînables pendant le fine-tuning.
-
-Les variables continues $X_3$ et $X_4$ sont standardisées à partir des moyennes et écarts-types du jeu d'entraînement source. Cette transformation est ensuite conservée sans modification pour le fine-tuning, l'apprentissage cible, le modèle combiné, la validation et le test. La réponse $Y$ n'est pas standardisée. Ces choix constituent une configuration de référence fixée avant l'analyse ; une étude ultérieure pourra évaluer la sensibilité aux dimensions du réseau, au taux d'apprentissage et à la régularisation.
+Le taux d'apprentissage plus faible lors du fine-tuning vise à adapter progressivement les poids préentraînés sans dégrader brutalement les représentations apprises sur le domaine source. L'embedding de $X_2$ et toutes les couches denses restent entraînables pendant le fine-tuning.
 
 ## Rôle de la variable de domaine $X_1$
 
-Dans le modèle préentraîné sur le domaine source comme dans le modèle entraîné uniquement sur les $n$ observations cibles, une seule modalité de $X_1$ est observée. L'embedding de la modalité absente n'est donc pas appris, et l'effet de l'embedding observé ne peut pas être distingué d'un décalage du biais de la première couche dense.
+La variable $X_1$ n'est fournie ni au modèle source, ni au modèle fine-tuné, ni au modèle cible entraîné *from scratch*. Dans chacune de ces phases, une seule modalité de $X_1$ serait observée ; elle n'apporterait donc aucune information permettant de distinguer les domaines.
 
-En revanche, le modèle combiné observe les deux modalités de $X_1$. Il peut ainsi apprendre directement un décalage entre les domaines et, grâce aux couches non linéaires du MLP, des relations qui dépendent du domaine. L'inclusion de $X_1$ est donc surtout informative pour cette troisième stratégie.
+Le modèle combiné est le seul à observer simultanément les domaines source et cible. Il reçoit donc $X_1$ en entrée et peut apprendre, au moyen de son embedding, un décalage ou des relations propres au domaine. Cette différence d'entrée est intentionnelle et fait partie de la définition des trois stratégies comparées.
 
-Afin de mesurer l'influence de ce choix, une analyse de sensibilité pourra répéter l'expérience en excluant $X_1$ des entrées. La comparaison principale conservera néanmoins $X_1$ dans les trois modèles afin que ceux-ci disposent exactement des mêmes variables explicatives.
+# Environnement de mise en œuvre
 
-Le jeu de test cible ne doit être utilisé ni pour entraîner les modèles ni pour choisir l'architecture ou les hyperparamètres. Ces choix doivent être fixés au préalable ou effectués à partir des seules données d'apprentissage et de validation.
+Le protocole sera implémenté en **Python**. La bibliothèque **PyTorch** sera utilisée pour définir les embeddings et les MLP, entraîner les modèles, appliquer l'arrêt anticipé et produire les prédictions. Les bibliothèques NumPy et pandas pourront être utilisées pour la manipulation des données, tandis que Matplotlib et Seaborn serviront à réaliser les visualisations.
+
+Afin de garantir la reproductibilité, les versions de Python et des bibliothèques seront enregistrées. Les graines aléatoires de Python, NumPy et PyTorch seront fixées et sauvegardées pour les découpages initiaux ainsi que pour chacune des dix répétitions. Si l'expérience est exécutée sur GPU, les options déterministes de PyTorch seront activées dans la mesure du possible.
+

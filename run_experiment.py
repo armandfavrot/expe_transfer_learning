@@ -34,19 +34,21 @@ def seed_everything(seed: int, deterministic: bool = True) -> None:
 
 
 class RegressionMLP(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self, include_x1: bool) -> None:
         super().__init__()
-        self.x1_embedding = nn.Embedding(2, 1)
+        self.include_x1 = include_x1
+        self.x1_embedding = nn.Embedding(2, 1) if include_x1 else None
         self.x2_embedding = nn.Embedding(3, 2)
         self.network = nn.Sequential(
-            nn.Linear(5, 32), nn.ReLU(), nn.Dropout(0.1),
+            nn.Linear(5 if include_x1 else 4, 32), nn.ReLU(), nn.Dropout(0.1),
             nn.Linear(32, 16), nn.ReLU(), nn.Dropout(0.1),
             nn.Linear(16, 1),
         )
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        nn.init.zeros_(self.x1_embedding.weight)
+        if self.x1_embedding is not None:
+            nn.init.zeros_(self.x1_embedding.weight)
         nn.init.normal_(self.x2_embedding.weight, mean=0.0, std=0.01)
         for layer in self.network:
             if isinstance(layer, nn.Linear):
@@ -54,7 +56,10 @@ class RegressionMLP(nn.Module):
                 nn.init.zeros_(layer.bias)
 
     def forward(self, x1: torch.Tensor, x2: torch.Tensor, continuous: torch.Tensor) -> torch.Tensor:
-        features = torch.cat((self.x1_embedding(x1), self.x2_embedding(x2), continuous), dim=1)
+        features = [self.x2_embedding(x2), continuous]
+        if self.x1_embedding is not None:
+            features.insert(0, self.x1_embedding(x1))
+        features = torch.cat(features, dim=1)
         return self.network(features).squeeze(1)
 
 
@@ -100,8 +105,17 @@ def tensors(data: pd.DataFrame, indices: np.ndarray, mean: np.ndarray, std: np.n
     return TensorDataset(x1, x2, continuous, y)
 
 
+def dataset_mse(model: nn.Module, dataset: TensorDataset, device: torch.device) -> float:
+    """Calcule la MSE sur un jeu complet, avec dropout desactive."""
+    model.eval()
+    with torch.no_grad():
+        x1, x2, cont, y = (v.to(device) for v in dataset.tensors)
+        return nn.functional.mse_loss(model(x1, x2, cont), y).item()
+
+
 def train_model(model: nn.Module, train_data: TensorDataset, val_data: TensorDataset, device: torch.device,
-                seed: int, lr: float, max_epochs: int, patience: int, min_delta: float) -> tuple[nn.Module, int, float]:
+                seed: int, lr: float, max_epochs: int, patience: int,
+                min_delta: float) -> tuple[nn.Module, int, float, list[dict]]:
     seed_everything(seed)
     model.to(device)
     generator = torch.Generator().manual_seed(seed)
@@ -109,6 +123,7 @@ def train_model(model: nn.Module, train_data: TensorDataset, val_data: TensorDat
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
     loss_fn = nn.MSELoss()
     best_loss, best_state, stale, best_epoch = float("inf"), None, 0, 0
+    history = []
     for epoch in range(1, max_epochs + 1):
         model.train()
         for x1, x2, cont, y in loader:
@@ -117,10 +132,9 @@ def train_model(model: nn.Module, train_data: TensorDataset, val_data: TensorDat
             loss = loss_fn(model(x1, x2, cont), y)
             loss.backward()
             optimizer.step()
-        model.eval()
-        with torch.no_grad():
-            vx1, vx2, vcont, vy = (v.to(device) for v in val_data.tensors)
-            val_loss = loss_fn(model(vx1, vx2, vcont), vy).item()
+        train_loss = dataset_mse(model, train_data, device)
+        val_loss = dataset_mse(model, val_data, device)
+        history.append({"epoch": epoch, "train_mse": train_loss, "validation_mse": val_loss})
         if val_loss < best_loss - min_delta:
             best_loss, best_epoch, stale = val_loss, epoch, 0
             best_state = copy.deepcopy(model.state_dict())
@@ -130,7 +144,9 @@ def train_model(model: nn.Module, train_data: TensorDataset, val_data: TensorDat
                 break
     if best_state is not None:
         model.load_state_dict(best_state)
-    return model, best_epoch, best_loss
+    for row in history:
+        row["is_best_epoch"] = row["epoch"] == best_epoch
+    return model, best_epoch, best_loss, history
 
 
 def rmse(model: nn.Module, dataset: TensorDataset, device: torch.device) -> float:
@@ -178,67 +194,88 @@ def resolve_device(requested: str) -> torch.device:
     return torch.device(requested)
 
 
-def run_dataset(path: Path, args: argparse.Namespace, device: torch.device) -> tuple[list[dict], dict]:
+def run_dataset(path: Path, args: argparse.Namespace, device: torch.device) -> tuple[list[dict], dict, list[dict]]:
     data = pd.read_csv(path)
     labels = data["X2"].map(X2_MAP).to_numpy()
     source = np.flatnonzero(data["X1"].to_numpy() == "a1")
     target = np.flatnonzero(data["X1"].to_numpy() == "b1")
-    split_rng = np.random.default_rng(args.split_seed)
-    target_test = stratified_indices(target, labels, 500, split_rng)
-    target_pool = np.asarray([i for i in target if i not in set(target_test)], dtype=int)
-    source_val = stratified_indices(source, labels, 200, split_rng)
-    source_train = np.asarray([i for i in source if i not in set(source_val)], dtype=int)
-    mean = data.iloc[source_train][["X3", "X4"]].mean().to_numpy()
-    std = data.iloc[source_train][["X3", "X4"]].std(ddof=0).to_numpy()
-    splits = {"source_train": source_train.tolist(), "source_validation": source_val.tolist(),
-              "target_pool": target_pool.tolist(), "target_test": target_test.tolist(), "repetitions": {}}
-    test_ds = tensors(data, target_test, mean, std)
-    test_data = data.iloc[target_test]
-    oracle_predictions = generator_prediction(test_data, path.stem)
-    oracle_rmse = float(np.sqrt(np.mean((test_data["Y"].to_numpy() - oracle_predictions) ** 2)))
     results = []
+    histories = []
+    splits = {"repetitions": {}}
 
     for repetition in range(1, args.repetitions + 1):
+        split_seed = args.split_seed + repetition
+        sampling_seed = args.sampling_seed + repetition
         base_seed = args.training_seed + 10_000 * repetition
-        rng = np.random.default_rng(args.sampling_seed + repetition)
+        split_rng = np.random.default_rng(split_seed)
+        target_test = stratified_indices(target, labels, 500, split_rng)
+        target_pool = np.asarray([i for i in target if i not in set(target_test)], dtype=int)
+        source_val = stratified_indices(source, labels, 200, split_rng)
+        source_train = np.asarray([i for i in source if i not in set(source_val)], dtype=int)
+        mean = data.iloc[source_train][["X3", "X4"]].mean().to_numpy()
+        std = data.iloc[source_train][["X3", "X4"]].std(ddof=0).to_numpy()
+        test_ds = tensors(data, target_test, mean, std)
+        test_data = data.iloc[target_test]
+        oracle_predictions = generator_prediction(test_data, path.stem)
+        oracle_rmse = float(np.sqrt(np.mean((test_data["Y"].to_numpy() - oracle_predictions) ** 2)))
+
+        rng = np.random.default_rng(sampling_seed)
         nested = nested_target_samples(target_pool, labels, rng)
         seed_everything(base_seed)
-        pretrained = RegressionMLP()
-        pretrained, pre_epoch, _ = train_model(
+        pretrained = RegressionMLP(include_x1=False)
+        pretrained, pre_epoch, _, pre_history = train_model(
             pretrained, tensors(data, source_train, mean, std), tensors(data, source_val, mean, std),
             device, base_seed, 1e-3, args.max_epochs, args.patience, args.min_delta,
         )
-        rep_splits = {"pretraining_seed": base_seed, "pretraining_best_epoch": pre_epoch, "samples": {}}
+        rep_splits = {
+            "split_seed": split_seed,
+            "sampling_seed": sampling_seed,
+            "pretraining_seed": base_seed,
+            "source_train": source_train.tolist(),
+            "source_validation": source_val.tolist(),
+            "target_pool": target_pool.tolist(),
+            "target_test": target_test.tolist(),
+            "standardization": {"mean": mean.tolist(), "std": std.tolist()},
+            "oracle_rmse": oracle_rmse,
+            "pretraining_best_epoch": pre_epoch,
+            "samples": {},
+        }
+        for row in pre_history:
+            histories.append({"dataset": path.stem, "repetition": repetition,
+                              "training_type": "source_pretraining", "strategy": "source_pretraining",
+                              "n_target": None, "uses_x1": False, **row})
         for size, sample in nested.items():
             train_idx, val_idx = split_train_validation(sample, labels, rng)
             rep_splits["samples"][str(size)] = {
                 "sample": sample.tolist(), "train": train_idx.tolist(), "validation": val_idx.tolist()
             }
-            train_ds, val_ds = tensors(data, train_idx, mean, std), tensors(data, val_idx, mean, std)
+            val_ds = tensors(data, val_idx, mean, std)
             strategies = (
-                ("fine_tuning", copy.deepcopy(pretrained), 1e-4),
-                ("from_scratch", None, 1e-3),
-                ("combined", None, 1e-3),
+                ("fine_tuning", copy.deepcopy(pretrained), 1e-4, False),
+                ("from_scratch", None, 1e-3, False),
+                ("combined", None, 1e-3, True),
             )
-            for offset, (strategy, model, lr) in enumerate(strategies):
+            for offset, (strategy, model, lr, include_x1) in enumerate(strategies):
                 model_seed = base_seed + size * 10 + offset
                 if model is None:
                     seed_everything(model_seed)
-                    model = RegressionMLP()
+                    model = RegressionMLP(include_x1=include_x1)
                 fit_indices = np.concatenate((source, train_idx)) if strategy == "combined" else train_idx
-                model, best_epoch, val_loss = train_model(
+                model, best_epoch, val_loss, history = train_model(
                     model, tensors(data, fit_indices, mean, std), val_ds, device, model_seed,
                     lr, args.max_epochs, args.patience, args.min_delta,
                 )
                 results.append({"dataset": path.stem, "repetition": repetition, "n_target": size,
-                                "strategy": strategy, "rmse": rmse(model, test_ds, device),
-                                "oracle_rmse": oracle_rmse,
+                                "strategy": strategy, "uses_x1": include_x1,
+                                "rmse": rmse(model, test_ds, device), "oracle_rmse": oracle_rmse,
                                 "best_epoch": best_epoch, "best_validation_mse": val_loss, "seed": model_seed})
+                for row in history:
+                    histories.append({"dataset": path.stem, "repetition": repetition,
+                                      "training_type": "target_adaptation", "strategy": strategy,
+                                      "n_target": size, "uses_x1": include_x1, **row})
         splits["repetitions"][str(repetition)] = rep_splits
         print(f"{path.stem}: repetition {repetition}/{args.repetitions} terminee", flush=True)
-    splits["standardization"] = {"mean": mean.tolist(), "std": std.tolist()}
-    splits["oracle_rmse"] = oracle_rmse
-    return results, splits
+    return results, splits, histories
 
 
 def main() -> None:
@@ -259,15 +296,17 @@ def main() -> None:
     device = resolve_device(args.device)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Calcul sur {device}")
-    all_results, all_splits = [], {}
+    all_results, all_splits, all_histories = [], {}, []
     for name in ("model_1.csv", "model_2.csv"):
         path = args.data_dir / name
         if not path.exists():
             raise FileNotFoundError(f"{path} absent : lancer simulate_data.py d'abord.")
-        results, splits = run_dataset(path, args, device)
+        results, splits, histories = run_dataset(path, args, device)
         all_results.extend(results)
+        all_histories.extend(histories)
         all_splits[path.stem] = splits
     pd.DataFrame(all_results).to_csv(args.output_dir / "rmse_results.csv", index=False)
+    pd.DataFrame(all_histories).to_csv(args.output_dir / "learning_curves.csv", index=False)
     (args.output_dir / "splits.json").write_text(json.dumps(all_splits, indent=2) + "\n", encoding="utf-8")
     run_info = {"python": platform.python_version(), "torch": torch.__version__, "numpy": np.__version__,
                 "pandas": pd.__version__, "device": str(device), "cuda": torch.version.cuda,

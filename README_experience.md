@@ -35,6 +35,7 @@ python run_experiment.py --device cuda --repetitions 1 --max-epochs 2 --patience
 Le calcul complet produit :
 
 - `results/rmse_results.csv` : RMSE des reseaux, RMSE oracle du modele generateur et informations d'arret anticipe ;
+- `results/learning_curves.csv` : MSE d'entrainement et de validation a chaque epoque pour tous les entrainements ;
 - `results/splits.json` : tous les indices des decoupages et les statistiques de standardisation ;
 - `results/run_metadata.json` : versions, GPU, graines et arguments d'execution.
 
@@ -44,6 +45,8 @@ Le calcul complet produit :
 python visualize_results.py
 ```
 
-Les figures sont enregistrees dans `figures/`. Pour changer les dossiers, utiliser
-les options `--data-dir`, `--output-dir` et `--results`; chaque script expose
+Les figures sont enregistrees dans `figures/`, notamment les courbes des
+preentrainements source et les grilles de courbes des trois strategies cibles.
+Pour changer les dossiers, utiliser les options `--data-dir`, `--output-dir`,
+`--results` et `--learning-curves`; chaque script expose
 l'ensemble de ses options avec `--help`.
