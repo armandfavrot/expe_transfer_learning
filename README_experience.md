@@ -15,21 +15,25 @@ simulation. Pour visualiser uniquement ces donnees :
 python visualize_results.py --data-only
 ```
 
-## 2. Lancer les calculs sur GPU
+## 2. Lancer les calculs
 
 ```bash
-python run_experiment.py --device cuda
+python run_experiment.py --device auto
 ```
 
 Le lancement complet applique les 10 repetitions, 500 epoques au maximum et
-l'arret anticipe du protocole. `--device cuda` provoque une erreur explicite si
-CUDA n'est pas disponible ; `--device auto` choisit automatiquement CUDA puis le
-CPU en solution de repli.
+l'arret anticipe du protocole. `--device auto` choisit automatiquement CUDA lorsqu'il est disponible, puis le CPU en solution de repli. `--device cuda` provoque une erreur explicite si CUDA n'est pas disponible.
 
 Un test rapide de la chaine de calcul peut etre effectue avant le lancement long :
 
 ```bash
-python run_experiment.py --device cuda --repetitions 1 --max-epochs 2 --patience 1 --output-dir results_smoke
+python run_experiment.py --device auto --repetitions 1 --max-epochs 2 --patience 1 --output-dir results_smoke
+```
+
+Pour visualiser ce test sans remplacer les figures principales :
+
+```bash
+python visualize_results.py --results results_smoke/rmse_results.csv --learning-curves results_smoke/learning_curves.csv --output-dir figures_smoke
 ```
 
 Le calcul complet produit :

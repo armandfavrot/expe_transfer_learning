@@ -168,7 +168,7 @@ def main() -> None:
     parser.add_argument("--results", type=Path, default=Path("results/rmse_results.csv"))
     parser.add_argument("--learning-curves", type=Path, default=Path("results/learning_curves.csv"))
     parser.add_argument("--output-dir", type=Path, default=Path("figures"))
-    parser.add_argument("--data-only", action="store_true", help="Ne trace pas les RMSE.")
+    parser.add_argument("--data-only", action="store_true", help="Ne trace pas les résultats de l’expérience.")
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     sns.set_theme(style="whitegrid", context="notebook")
