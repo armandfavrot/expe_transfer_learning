@@ -1,7 +1,0 @@
-Python: /home/florian/.pyenv/versions/expe_transfer_learning/bin/python3
-PyTorch: 2.6.0+cu124
-CUDA PyTorch: 12.4
-CUDA disponible: True
-Nombre de GPU: 1
-GPU: NVIDIA T400
-Tensor: cuda:0

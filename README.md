@@ -1,12 +1,12 @@
 # Transfert d'apprentissage par fine-tuning en régression
 
-Ce dépôt contient une expérience reproductible évaluant l'intérêt du **fine-tuning** pour transférer un réseau de neurones d'un domaine source vers un domaine cible. Deux mécanismes de régression simulés sont étudiés : un premier avec des effets simples et un second comportant des interactions plus complexes.
+Ce dépôt contient une expérience dont l’objectif est d’évaluer le fine-tuning comme approche de transfert d’apprentissage dans un problème de régression à partir de données simulées.
 
-Trois stratégies sont comparées lorsque peu d'observations cibles sont disponibles :
+Trois stratégies sont comparées :
 
 - **fine-tuning** d'un MLP préentraîné sur le domaine source ;
-- apprentissage sur le domaine cible uniquement (**from scratch**) ;
-- apprentissage sur les données source et cible réunies (**combined**).
+- apprentissage sur le domaine cible uniquement (**from scratch**; benchmark)
+- apprentissage sur les données source et cible réunies (**combined**; benchmark).
 
 ## Résultats
 
